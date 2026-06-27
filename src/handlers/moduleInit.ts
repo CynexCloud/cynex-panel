@@ -1,0 +1,24 @@
+/**
+ * ╳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╳
+ *      Cynex - Open Source Project by CynexLabs
+ *      Repository: https://github.com/CynexCloud/panel
+ *
+ *     © 2025 CynexLabs. Licensed under the MIT License
+ * ╳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╳
+ */
+
+import { Router } from 'express';
+
+interface ModuleInfo {
+  name: string;
+  description: string;
+  version: string;
+  moduleVersion: string;
+  author: string;
+  license: string;
+}
+
+export interface Module {
+  info: ModuleInfo;
+  router: (applyWs?: (router: Router) => void) => Router;
+}

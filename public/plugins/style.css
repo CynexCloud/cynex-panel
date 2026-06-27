@@ -1,0 +1,91 @@
+/* Custom Styles for Plugin Marketplace */
+
+@keyframes skeleton-loading {
+  0% {
+    background-color: rgba(229, 231, 235, 0.12);
+  }
+  50% {
+    background-color: rgba(229, 231, 235, 0.24);
+  }
+  100% {
+    background-color: rgba(229, 231, 235, 0.12);
+  }
+}
+
+.skeleton-icon {
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+}
+
+.skeleton-text {
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+  border-radius: 4px;
+}
+
+/* Glassmorphism effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .glass-card {
+  background: rgba(20, 20, 20, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* Hover scales */
+.plugin-card {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.plugin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dark .plugin-card:hover {
+  box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Terminal styled output scrollbars */
+.font-mono::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.font-mono::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.font-mono::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.font-mono::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Status dots */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.healthy {
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.status-dot.degraded {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.status-dot.offline {
+  background-color: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}

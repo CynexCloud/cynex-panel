@@ -1,0 +1,413 @@
+<%- include('../components/header', { title: 'Plugin Marketplace' }) %>
+
+<link rel="stylesheet" href="/plugins/style.css">
+
+<main class="h-screen m-auto">
+  <div class="flex h-screen">
+    <!-- Sidebar navigation -->
+    <div class="w-60 h-full"><%- include('../components/template') %></div>
+
+    <!-- Main Page Content -->
+    <div id="page-content" class="flex-1 overflow-y-auto pt-16">
+      <div class="px-12 pt-6 pb-8">
+        
+        <!-- Top Toolbar with Server Selector -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-200 dark:border-white/5 pb-6 mb-6">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Plugins Marketplace</h1>
+            <p class="text-sm text-neutral-500 mt-1">Search, scan, install, and update plugins natively on your Minecraft servers.</p>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <label for="server-selector" class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Target Server:</label>
+            <select id="server-selector" class="min-h-10 px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm font-medium text-neutral-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-neutral-500">
+              <% if (servers && servers.length > 0) { %>
+                <% servers.forEach(function(server) { %>
+                  <option value="<%= server.UUID %>" <%= server.UUID === selectedServerUuid ? 'selected' : '' %>>
+                    <%= server.name %> (<%= server.UUID.substring(0, 8) %>) - <%= server.image?.name || 'Java Server' %>
+                  </option>
+                <% }); %>
+              <% } else { %>
+                <option value="">No servers available</option>
+              <% } %>
+            </select>
+          </div>
+        </div>
+
+        <!-- Section Navigation Tabs -->
+        <div class="flex border-b border-neutral-200 dark:border-white/5 mb-8">
+          <nav class="flex space-x-6" aria-label="Tabs">
+            <button id="tab-marketplace" class="tab-btn pb-4 text-sm font-medium border-b-2 border-neutral-900 dark:border-white text-neutral-900 dark:text-white" onclick="switchTab('marketplace')">
+              Marketplace
+            </button>
+            <button id="tab-installed" class="tab-btn pb-4 text-sm font-medium border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300" onclick="switchTab('installed')">
+              Installed Plugins
+            </button>
+            <button id="tab-updates" class="tab-btn pb-4 text-sm font-medium border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300" onclick="switchTab('updates')">
+              Updates
+              <span id="update-badge" class="hidden ml-1 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-amber-500 text-white">0</span>
+            </button>
+            <button id="tab-upload" class="tab-btn pb-4 text-sm font-medium border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300" onclick="switchTab('upload')">
+              Upload JAR
+            </button>
+            <button id="tab-logs" class="tab-btn pb-4 text-sm font-medium border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300" onclick="switchTab('logs')">
+              Install Logs
+            </button>
+            <% if (user.isAdmin) { %>
+              <button id="tab-telemetry" class="tab-btn pb-4 text-sm font-medium border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300" onclick="switchTab('telemetry')">
+                Telemetry
+              </button>
+            <% } %>
+          </nav>
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- TAB CONTENT: MARKETPLACE -->
+        <!-- ===================================================================== -->
+        <div id="content-marketplace" class="tab-content block">
+          <!-- Search Bar & Filters -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="md:col-span-2 relative">
+              <input type="text" id="search-input" placeholder="Search plugin database (Modrinth, Hangar, SpigotMC)..." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm text-neutral-800 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 shadow-sm">
+              <div class="absolute left-3.5 top-3.5 text-neutral-400">
+                <%- icon('search', { class: 'w-4 h-4' }) %>
+              </div>
+            </div>
+            
+            <div>
+              <select id="filter-category" class="w-full px-3 py-2.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-500 shadow-sm">
+                <option value="">All Categories</option>
+                <option value="optimization">Optimization</option>
+                <option value="security">Security</option>
+                <option value="chat">Chat & Social</option>
+                <option value="admin">Administration</option>
+                <option value="world">World Management</option>
+                <option value="economy">Economy</option>
+              </select>
+            </div>
+
+            <div>
+              <select id="filter-provider" class="w-full px-3 py-2.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-500 shadow-sm">
+                <option value="modrinth">Modrinth (Recommended)</option>
+                <option value="spigotmc">SpigotMC (Spiget)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cards Grid -->
+          <div id="plugin-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dynamic plugin cards will be inserted here via JS -->
+            <div class="col-span-full text-center py-12 text-neutral-500 dark:text-neutral-400">
+              <%- icon('loader', { class: 'w-8 h-8 animate-spin mx-auto mb-4 text-neutral-400' }) %>
+              Loading marketplace plugins...
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex items-center justify-between mt-12 border-t border-neutral-200 dark:border-white/5 pt-6">
+            <button id="prev-page" class="px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition" disabled>
+              Previous Page
+            </button>
+            <span id="page-indicator" class="text-sm font-medium text-neutral-500">Page 1</span>
+            <button id="next-page" class="px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition">
+              Next Page
+            </button>
+          </div>
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- TAB CONTENT: INSTALLED PLUGINS -->
+        <!-- ===================================================================== -->
+        <div id="content-installed" class="tab-content hidden">
+          <div class="overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 rounded-2xl shadow-sm">
+            <table class="min-w-full divide-y divide-neutral-200 dark:divide-white/5">
+              <thead class="bg-neutral-50 dark:bg-neutral-900/60 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-left">
+                <tr>
+                  <th scope="col" class="px-6 py-4">Plugin Info</th>
+                  <th scope="col" class="px-6 py-4">Installed Version</th>
+                  <th scope="col" class="px-6 py-4">Latest Version</th>
+                  <th scope="col" class="px-6 py-4">Registry Source</th>
+                  <th scope="col" class="px-6 py-4">Auto-Update</th>
+                  <th scope="col" class="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="installed-table-body" class="divide-y divide-neutral-200 dark:divide-white/5 text-sm text-neutral-800 dark:text-neutral-300">
+                <!-- Dynamic items injected here -->
+                <tr>
+                  <td colspan="6" class="px-6 py-12 text-center text-neutral-400">
+                    No plugins detected on this server. Go to Marketplace to install.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- TAB CONTENT: UPDATES -->
+        <!-- ===================================================================== -->
+        <div id="content-updates" class="tab-content hidden">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-lg font-semibold text-neutral-800 dark:text-white">Available Updates</h2>
+              <p class="text-sm text-neutral-500 mt-1">Keep your plugins running on stable and secured releases.</p>
+            </div>
+            <button id="update-all-btn" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-sm transition hidden">
+              Update All Selected
+            </button>
+          </div>
+
+          <div id="updates-list-container" class="space-y-4">
+            <!-- Dynamic updates injected here -->
+            <div class="text-center py-12 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl text-neutral-500">
+              <%- icon('check-circle-2', { class: 'w-10 h-10 text-emerald-500 mx-auto mb-3' }) %>
+              All plugins are fully up to date!
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- TAB CONTENT: UPLOAD JAR -->
+        <!-- ===================================================================== -->
+        <div id="content-upload" class="tab-content hidden">
+          <div id="drop-zone" class="flex flex-col items-center justify-center border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-12 bg-neutral-50/50 dark:bg-neutral-800/10 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors cursor-pointer">
+            <%- icon('upload-cloud', { class: 'w-12 h-12 text-neutral-400 mb-4' }) %>
+            <p class="text-sm font-semibold text-neutral-800 dark:text-white mb-1">Drag and drop plugin JAR files here</p>
+            <p class="text-xs text-neutral-500 mb-4">Supported formats: .jar, .zip (Max 50MB)</p>
+            <input type="file" id="file-upload-input" accept=".jar,.zip" class="hidden">
+            <button class="px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl text-sm font-semibold hover:bg-neutral-700 dark:hover:bg-neutral-200 transition shadow-sm">
+              Select File
+            </button>
+          </div>
+          
+          <div id="upload-progress-container" class="mt-8 hidden">
+            <div class="bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-white/5 rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-2">
+                <span id="upload-filename" class="text-sm font-semibold text-neutral-800 dark:text-white truncate max-w-md">filename.jar</span>
+                <span id="upload-percent" class="text-xs font-semibold text-neutral-500">0%</span>
+              </div>
+              <div class="w-full bg-neutral-200 dark:bg-neutral-700 h-2 rounded-full overflow-hidden">
+                <div id="upload-progress-bar" class="bg-neutral-900 dark:bg-white h-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p id="upload-status" class="text-xs text-neutral-400 mt-2">Uploading file to server...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- TAB CONTENT: TELEMETRY -->
+        <!-- ===================================================================== -->
+        <% if (user.isAdmin) { %>
+          <div id="content-telemetry" class="tab-content hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <!-- Metrics Cards -->
+              <div class="bg-white dark:bg-neutral-900 p-6 border border-neutral-200 dark:border-white/5 rounded-2xl shadow-sm">
+                <p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Total Installations</p>
+                <h3 id="metric-total-installs" class="text-3xl font-bold mt-2 text-neutral-900 dark:text-white">0</h3>
+              </div>
+              
+              <div class="bg-white dark:bg-neutral-900 p-6 border border-neutral-200 dark:border-white/5 rounded-2xl shadow-sm">
+                <p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Installer Success Rate</p>
+                <h3 id="metric-success-rate" class="text-3xl font-bold mt-2 text-emerald-500">100%</h3>
+              </div>
+              
+              <div class="bg-white dark:bg-neutral-900 p-6 border border-neutral-200 dark:border-white/5 rounded-2xl shadow-sm">
+                <p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Avg Installation Time</p>
+                <h3 id="metric-avg-time" class="text-3xl font-bold mt-2 text-neutral-900 dark:text-white">0s</h3>
+              </div>
+            </div>
+
+            <!-- Provider Health Monitors -->
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 rounded-2xl shadow-sm p-6 mb-8">
+              <h3 class="text-lg font-semibold text-neutral-800 dark:text-white mb-4">Registry Provider Health Status</h3>
+              <div id="provider-health-list" class="space-y-4">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Popular Installed Plugins -->
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 rounded-2xl shadow-sm p-6">
+              <h3 class="text-lg font-semibold text-neutral-800 dark:text-white mb-4">Most Popular Installed Plugins</h3>
+              <div id="popular-plugins-list" class="space-y-2">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- ===================================================================== -->
+        <!-- TAB CONTENT: LOGS -->
+        <!-- ===================================================================== -->
+        <div id="content-logs" class="tab-content hidden">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-neutral-800 dark:text-white">Installation Pipeline Logs</h3>
+            <button onclick="fetchJobsList()" class="text-xs font-semibold text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+              Refresh
+            </button>
+          </div>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Active Jobs list -->
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 rounded-2xl p-4 lg:col-span-1 max-h-[500px] overflow-y-auto">
+              <h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Install History</h4>
+              <div id="jobs-list" class="space-y-2">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Terminal Output -->
+            <div class="bg-neutral-950 text-neutral-200 border border-neutral-800 rounded-2xl p-6 lg:col-span-2 font-mono text-xs max-h-[500px] overflow-y-auto" style="scrollbar-width: thin;">
+              <pre id="job-terminal-output" class="whitespace-pre-wrap select-text">Select an installation job from the left menu to view detailed execution logs...</pre>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- =========================================================================== -->
+<!-- PERSISTENT INSTALL OVERLAY -->
+<!-- =========================================================================== -->
+<div id="install-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-sm pointer-events-none opacity-0 transition-opacity duration-300">
+  <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 rounded-2xl shadow-2xl p-8 max-w-lg w-full transform scale-95 transition-transform duration-300 pointer-events-auto">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <h3 id="overlay-title" class="text-lg font-bold text-neutral-900 dark:text-white">Installing Plugin</h3>
+        <p id="overlay-subtitle" class="text-xs text-neutral-400 mt-1">Provider ID: <span id="overlay-provider">modrinth</span></p>
+      </div>
+      <button onclick="closeInstallOverlay()" class="text-neutral-400 hover:text-neutral-500 transition-colors">
+        <%- icon('x', { class: 'w-5 h-5' }) %>
+      </button>
+    </div>
+    
+    <div class="space-y-6">
+      <!-- Progress Bar -->
+      <div>
+        <div class="flex items-center justify-between text-xs font-semibold text-neutral-500 mb-2">
+          <span id="overlay-stage-text">Preparing workspace...</span>
+          <span id="overlay-percent-text">0%</span>
+        </div>
+        <div class="w-full bg-neutral-200 dark:bg-neutral-700 h-2 rounded-full overflow-hidden">
+          <div id="overlay-progress-bar" class="bg-neutral-900 dark:bg-white h-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Logs -->
+      <div class="bg-neutral-950 text-neutral-300 border border-neutral-800 rounded-xl p-4 font-mono text-[10px] h-36 overflow-y-auto">
+        <pre id="overlay-logs" class="whitespace-pre-wrap select-text">Waiting for installation step logs...</pre>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-3 pt-2">
+        <button id="overlay-cancel-btn" class="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm font-semibold rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition">
+          Cancel
+        </button>
+        <button id="overlay-done-btn" onclick="closeInstallOverlay()" class="px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-semibold rounded-xl hover:bg-neutral-700 dark:hover:bg-neutral-200 transition hidden">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================== -->
+<!-- DETAILS MODAL -->
+<!-- =========================================================================== -->
+<div id="details-modal" class="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-sm pointer-events-none opacity-0 transition-opacity duration-300">
+  <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto p-8 transform scale-95 transition-transform duration-300 pointer-events-auto">
+    <!-- Close -->
+    <div class="flex justify-end mb-4">
+      <button onclick="closeDetailsModal()" class="text-neutral-400 hover:text-neutral-500 transition-colors">
+        <%- icon('x', { class: 'w-6 h-6' }) %>
+      </button>
+    </div>
+
+    <div id="modal-loader" class="text-center py-12 text-neutral-400">
+      <%- icon('loader', { class: 'w-8 h-8 animate-spin mx-auto mb-4 text-neutral-400' }) %>
+      Fetching plugin registry specifications...
+    </div>
+
+    <div id="modal-content" class="hidden">
+      <!-- Header -->
+      <div class="flex gap-6 mb-6">
+        <img id="modal-icon" src="" alt="" class="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800 object-cover shrink-0">
+        <div>
+          <h2 id="modal-name" class="text-xl font-bold text-neutral-900 dark:text-white">Plugin Name</h2>
+          <p id="modal-author" class="text-sm text-neutral-500 mt-1">Author Name</p>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <span id="modal-verified-badge" class="px-2 py-0.5 text-xs font-semibold rounded-md bg-emerald-500/10 text-emerald-500 hidden border border-emerald-500/20">Verified</span>
+            <span id="modal-premium-badge" class="px-2 py-0.5 text-xs font-semibold rounded-md bg-amber-500/10 text-amber-500 hidden border border-amber-500/20">Premium</span>
+            <span id="modal-license-badge" class="px-2 py-0.5 text-xs font-semibold rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700">MIT</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Columns -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Details Column -->
+        <div class="md:col-span-2 space-y-6">
+          <div>
+            <h3 class="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-2">Description</h3>
+            <p id="modal-description" class="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed"></p>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-2">Changelog & Release Notes</h3>
+            <div id="modal-changelog-box" class="bg-neutral-50 dark:bg-neutral-800/20 border border-neutral-200 dark:border-white/5 rounded-xl p-4 text-xs font-mono text-neutral-600 dark:text-neutral-400 max-h-40 overflow-y-auto">
+              <!-- Injected -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Meta / Versions Column -->
+        <div class="space-y-6">
+          <!-- Install Actions -->
+          <div class="bg-neutral-50 dark:bg-neutral-800/30 border border-neutral-200 dark:border-white/5 rounded-2xl p-4">
+            <h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Install Options</h4>
+            <div class="space-y-3">
+              <div>
+                <label for="modal-version-select" class="text-xs text-neutral-400 font-medium block mb-1">Select Version:</label>
+                <select id="modal-version-select" class="w-full px-2 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-xs font-semibold focus:outline-none">
+                  <!-- Dynamic -->
+                </select>
+              </div>
+              <button id="modal-install-btn" class="w-full py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-bold rounded-xl hover:bg-neutral-700 dark:hover:bg-neutral-200 transition shadow-sm">
+                Install Selected Version
+              </button>
+            </div>
+          </div>
+
+          <!-- Specifications -->
+          <div>
+            <h3 class="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-3">Specifications</h3>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between border-b border-neutral-200 dark:border-white/5 pb-2">
+                <span class="text-neutral-400">Total Downloads</span>
+                <span id="modal-downloads" class="font-semibold text-neutral-800 dark:text-white">0</span>
+              </div>
+              <div class="flex justify-between border-b border-neutral-200 dark:border-white/5 pb-2">
+                <span class="text-neutral-400">Platform Support</span>
+                <span id="modal-platforms" class="font-semibold text-neutral-800 dark:text-white">Paper, Spigot</span>
+              </div>
+              <div class="flex justify-between border-b border-neutral-200 dark:border-white/5 pb-2">
+                <span class="text-neutral-400">Game Versions</span>
+                <span id="modal-mc-versions" class="font-semibold text-neutral-800 dark:text-white">1.20 - 1.20.4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../components/footer') %>
+
+<script nonce="<%- nonce %>">
+  // Expose EJS local variables to client script
+  window.selectedServerUuid = "<%= selectedServerUuid %>";
+  window.csrfToken = "<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>";
+</script>
+<script nonce="<%- nonce %>" src="/plugins/client.js"></script>
